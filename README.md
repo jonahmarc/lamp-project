@@ -19,10 +19,9 @@ cd lamp-project
 ```
 - create and configure **.env** file (*https://github.com/platformsh-templates/laravel/blob/master/.env.example*)
 
-`composer install`
-
-`php composer.phar install`
 ```
+composer install
+php composer.phar install
 php artisan key:generate
 php artisan migrate
 php artisan serve
