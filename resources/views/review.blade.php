@@ -14,7 +14,6 @@
     <div class="page-container">
         <div class="review-wrapper">
             <form action="/info" method="GET" class="email-lookup">
-                <!-- @csrf -->
                 <div class="input-wrapper">
                     <label for="email">Email: </label>
                     <input type="email" name="email" id="email" required/>

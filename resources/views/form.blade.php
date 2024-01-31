@@ -87,9 +87,6 @@
         <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 
         <script type="text/javascript">
-            // $(document).on("submit", ".customer-info", function(event){
-            //     event.preventDefault();
-            // });
 
             document.addEventListener('DOMContentLoaded', function() {
 
