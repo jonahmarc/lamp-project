@@ -14,9 +14,6 @@ use App\Http\Controllers\CustomerController;
 |
 */
 
-// Route::get('/', function () {
-//     return view('form');
-// });
 Route::get('/', [CustomerController::class, 'form']);
 Route::get('/review', [CustomerController::class, 'review']);
 Route::get('/info', [CustomerController::class, 'info']);
