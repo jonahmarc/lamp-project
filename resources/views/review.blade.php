@@ -14,7 +14,7 @@
     </div>
     <div class="form-wrapper row-span-7 flex flex-wrap pt-10">
         <div class="flex-initial w-1/2 grid grid-rows-8">
-            <form  action="/info" method="GET"class="row-span-2 flex flex-wrap px-10 justify-center content-center">
+            <form  action="/info" method="GET" class="row-span-2 flex flex-wrap px-10 justify-center content-center">
                 <div class="grid content-center">
                     <p class="text-cyan-900 font-bold align-middle">Email</p>
                 </div>

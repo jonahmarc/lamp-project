@@ -62,14 +62,14 @@ label {
 /* review page */
 
 .page-container {
-    display: flex;
-    flex-direction: row;
     height: 90vh;
     width: 100vw;
+    display: grid;
+    align-items: center;
+    grid-template-columns: repeat(auto-fit, minmax(min(50vw, 100%), 1fr));
 }
 
 .review-wrapper {
-    width: 50%;
     height: 90vh;
     display: flex;
     flex-direction: column;
@@ -83,16 +83,13 @@ label {
 }
 
 .calculator {
-    width: 50%;
     height: 90vh;
     margin-top: 1.2em;
-    /* display: flex;
-    align-items: center;
-    justify-content: center; */
 }
 
 .calculator iframe {
-    width: auto;
+    width: 50%;
+    min-width: 20%;
     height: 90%;
 }
 
