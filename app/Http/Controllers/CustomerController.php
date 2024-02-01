@@ -45,6 +45,15 @@ class CustomerController extends Controller
 
     public function save(Request $request){
 
+        $validated = $request->validate([
+            "firstname" => "required",
+            "lastname" => "required",
+            "email" => "required|email:rfc,strict,dns,filter",
+            "city" => "required",
+            "country" => "required",
+            "filepath" => "required"
+        ]);
+
         $result = DB::table('customer')
                     ->where('email', '=', $request->email)
                     ->first();
@@ -57,15 +66,6 @@ class CustomerController extends Controller
             $customer->save();
         }
         else {
-            $validated = $request->validate([
-                "firstname" => "required",
-                "lastname" => "required",
-                "email" => "required|email:rfc,strict,dns,filter",
-                "city" => "required",
-                "country" => "required",
-                "filepath" => "required"
-            ]);
-
             $customer = Customer::create($validated);
         }
         return view('form');
