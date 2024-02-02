@@ -1,3 +1,72 @@
+<?php
+include_once("connection.php");
+$con = connect();
+
+if (isset($_POST["submit"])){
+    $email = $_POST['email'];
+    $atPos = mb_strpos($email, '@');
+    $domain = mb_substr($email, $atPos + 1);
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "<strong>" . $email . "</strong> is NOT a valid email address!";
+    }
+    elseif (!checkdnsrr($domain . '.', 'MX')){
+        $error = "Domain <strong>" . $domain . "</strong> is not valid!";
+    }
+    else {
+        $firstname = $_POST['firstname'];
+        $lastname = $_POST['lastname'];
+        $city = $_POST['city'];
+        $country = $_POST['country'];
+
+        $sql = "SELECT * FROM customer WHERE email='$email'";
+        $students = $con->query($sql) or die ($con->error);
+        $row = $students->fetch_assoc();
+        $count = $students->num_rows;
+
+        $filename = basename($_FILES['profile']['name']);
+        $tempname = $_FILES['profile']['tmp_name'];
+        $destination_path = getcwd().DIRECTORY_SEPARATOR."images";
+        $target_path = $destination_path . "/" . $filename;
+
+        if ($count == 0){
+            $result = move_uploaded_file($tempname, $target_path);
+
+            if (! $result) {
+                $profile_error = "Profile picture not uploaded successfully!";
+            }
+            else {
+                $sql = "INSERT INTO customer (`firstname`, `lastname`, `email`, `city`, `country`, `filename`) VALUES ('$firstname', '$lastname', '$email', '$city', '$country', '$filename')";
+                $con->query($sql) or die ($con->error);
+
+                echo header("Location: index.php");
+            }
+        }
+        else{
+            $prev_filename = $row['email'];
+            $result = unlink($destination_path . "/" . $prev_filename);
+
+            if (! $result) {
+                $profile_error = "Unable to delete previous profile picture!";
+            }
+            else {
+                $result = move_uploaded_file($tempname, $target_path);
+
+                if (! $result) {
+                    $profile_error = "Profile picture not uploaded successfully!";
+                }
+                else {
+                    $sql = "UPDATE customer SET firstname='$firstname', lastname='$lastname', city='$city', country='$country', filename='$filename' WHERE email='$email'";
+                    $con->query($sql) or die ($con->error);
+
+                    echo header("Location: index.php");
+                }
+            }
+        }
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,19 +75,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <title>Customer Information Entry Form</title>
 </head>
-<body class="grid h-screen w-screen m-0 grid-rows-8 bg-cyan-100">
+<body class="grid h-screen w-screen max-w-full m-0 grid-rows-8 bg-cyan-100">
     <div class="row-span-1 flex w-full justify-end items-center bg-cyan-900 shadow-xl text-cyan-100">
-        <a class="form-page hover:underline" href="/">CUSTOMER INFORMATION ENTRY FORM</a>
-        <a class="review-page ml-4 hover:underline" href="/review">CUSTOMER INFORMATION REVIEW PAGE</a>
+        <a class="form-page hover:underline" href="index.php">CUSTOMER INFORMATION ENTRY FORM</a>
+        <a class="review-page mr-20 ml-4 hover:underline" href="review.php">CUSTOMER INFORMATION REVIEW PAGE</a>
     </div>
     <div class="form-wrapper row-span-7 grid content-start justify-center pt-10">
-        <form action="/save" method="POST"  class="w-full max-w-sm">
-            @csrf
+        <form action="" method="POST" enctype="multipart/form-data" class="w-full max-w-sm">
             <div class="md:flex md:items-center mb-6">
-                <div class="md:w-3/3">
+                <div class="md:w-1/3">
+                    <label class="block text-cyan-900 font-bold md:text-right mb-1 md:mb-0 pr-4" for="inline-last-name">
+                        Profile Picture
+                    </label>
+                </div>
+                <div class="md:w-2/3">
                     <label class="block">
-                        <span class="sr-only">Choose File</span>
-                        <input name="filepath" id="image" type="file" class="block w-full text-sm text-cyan-500
+                        <input name="profile" id="profile" type="file" accept=".jpg, .jpeg, .png" class="block w-full text-sm text-cyan-500
                             file:me-4 file:py-2 file:px-3
                             file:rounded-lg file:border-0
                             file:text-sm file:font-semibold
@@ -26,13 +98,26 @@
                             hover:file:bg-cyan-300
                             file:disabled:opacity-50 file:disabled:pointer-events-none
                             dark:file:bg-cyan-200
-                            dark:hover:file:bg-cyan-50
-                        ">
+                            dark:hover:file:bg-cyan-50"
+                            required
+                        >
                     </label>
                 </div>
             </div>
+            <?php if ($profile_error){
+                    echo
+                    '<div class="md:flex md:items-center mb-6">
+                        <div class="md:w-3/3">
+                            <p class="m-0 text-base text-red-600">' . $profile_error . '</p>
+                        </div>
+                    </div>'
+                    ;
+                }
+            ?>
             <div class="md:flex md:items-center mb-6" id="image">
-                <div class="md:w-3/3">
+                <div class="md:w-1/3">
+                </div>
+                <div class="md:w-2/3">
                     <img id="image-holder" src="" alt="preview image" style="max-height: 70px; display:none;">
                 </div>
             </div>
@@ -43,18 +128,9 @@
                     </label>
                 </div>
                 <div class="md:w-2/3">
-                    <input class="bg-white appearance-none border-2 border-cyan-700 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:border-cyan-400" name="lastname" id="inline-last-name" type="text" value="">
+                    <input class="bg-white appearance-none border-2 border-cyan-700 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:border-cyan-400" name="lastname" id="inline-last-name" type="text" value="" required>
                 </div>
             </div>
-            @error('lastname')
-                <div class="md:flex md:items-center mb-6">
-                    <div class="md:w-3/3">
-                        <p class="m-0 text-base text-red-600">
-                            {{$message}}
-                        </p>
-                    </div>
-                </div>
-            @enderror
             <div class="md:flex md:items-center mb-6">
                 <div class="md:w-1/3">
                     <label class="block text-cyan-900 font-bold md:text-right mb-1 md:mb-0 pr-4" for="inline-first-name">
@@ -62,18 +138,9 @@
                     </label>
                 </div>
                 <div class="md:w-2/3">
-                    <input class="bg-white appearance-none border-2 border-cyan-700 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:border-cyan-400" name="firstname" id="inline-first-name" type="text" value="">
+                    <input class="bg-white appearance-none border-2 border-cyan-700 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:border-cyan-400" name="firstname" id="inline-first-name" type="text" value="" required>
                 </div>
             </div>
-            @error('firstname')
-                <div class="md:flex md:items-center mb-6">
-                    <div class="md:w-3/3">
-                        <p class="m-0 text-base text-red-600">
-                            {{$message}}
-                        </p>
-                    </div>
-                </div>
-            @enderror
             <div class="md:flex md:items-center mb-6">
                 <div class="md:w-1/3">
                     <label class="block text-cyan-900 font-bold md:text-right mb-1 md:mb-0 pr-4" for="inline-email">
@@ -81,18 +148,19 @@
                     </label>
                 </div>
                 <div class="md:w-2/3">
-                    <input class="bg-white appearance-none border-2 border-cyan-700 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:border-cyan-400" name="email" id="inline-email" type="email" value="">
+                    <input class="bg-white appearance-none border-2 border-cyan-700 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:border-cyan-400" name="email" id="inline-email" type="email" value="" required>
                 </div>
             </div>
-            @error('email')
-                <div class="md:flex md:items-center mb-6">
-                    <div class="md:w-3/3">
-                        <p class="m-0 text-base text-red-600">
-                            {{$message}}
-                        </p>
-                    </div>
-                </div>
-            @enderror
+            <?php if ($error){
+                    echo
+                    '<div class="md:flex md:items-center mb-6">
+                        <div class="md:w-3/3">
+                            <p class="m-0 text-base text-red-600">' . $error . '</p>
+                        </div>
+                    </div>'
+                    ;
+                }
+            ?>
             <div class="md:flex md:items-center mb-6">
                 <div class="md:w-1/3">
                     <label class="block text-cyan-900 font-bold md:text-right mb-1 md:mb-0 pr-4" for="inline-city">
@@ -100,18 +168,9 @@
                     </label>
                 </div>
                 <div class="md:w-2/3">
-                    <input class="bg-white appearance-none border-2 border-cyan-700 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:border-cyan-400" name="city" id="inline-city" type="text" value="">
+                    <input class="bg-white appearance-none border-2 border-cyan-700 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:border-cyan-400" name="city" id="inline-city" type="text" value="" required>
                 </div>
             </div>
-            @error('city')
-                <div class="md:flex md:items-center mb-6">
-                    <div class="md:w-3/3">
-                        <p class="m-0 text-base text-red-600">
-                            {{$message}}
-                        </p>
-                    </div>
-                </div>
-            @enderror
             <div class="md:flex md:items-center mb-6">
                 <div class="md:w-1/3">
                     <label class="block text-cyan-900 font-bold md:text-right mb-1 md:mb-0 pr-4" for="inline-country">
@@ -130,15 +189,6 @@
                     </select>
                 </div>
             </div>
-            @error('country')
-                <div class="md:flex md:items-center mb-6">
-                    <div class="md:w-3/3">
-                        <p class="m-0 text-base text-red-600">
-                            {{$message}}
-                        </p>
-                    </div>
-                </div>
-            @enderror
             <div class="md:flex md:items-center">
                 <div class="md:w-1/3"></div>
                 <div class="md:w-1/3">
@@ -147,7 +197,7 @@
                     </button>
                 </div>
                 <div class="md:w-1/3 grid justify-end">
-                    <button type="submit" class="shadow bg-cyan-900 hover:bg-cyan-400 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded">
+                    <button type="submit" name="submit" class="shadow bg-cyan-900 hover:bg-cyan-400 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded">
                         SAVE
                     </button>
                 </div>
@@ -166,7 +216,8 @@
                 }
                 var storedValue = sessionStorage.getItem('image-value');
                 if (storedValue) {
-                    const fileInput = document.getElementById('image');
+                    // const fileInput = document.getElementById('image');
+                    const fileInput = document.getElementById('profile');
 
                     // Create a new File object
                     const myFile = new File([storedImage], storedValue, {
@@ -183,12 +234,12 @@
             });
 
             $(document).ready(function (e) {
-                $('#image').change(function(){
+                $('#profile').change(function(){
                     let reader = new FileReader();
                     reader.onload = (e) => {
                         $('#image-holder').attr('src', e.target.result);
-                        const imagePath = document.getElementById('image').value
-                        const imageName = imagePath.substring(12)
+                        const imagePath = document.getElementById('profile').value;
+                        const imageName = imagePath.substring(12);
                         sessionStorage.setItem('image-value', imageName);
                         sessionStorage.setItem('image-save', reader.result);
                     }
