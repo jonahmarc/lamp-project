@@ -43,7 +43,7 @@ if (isset($_POST["submit"])){
             }
         }
         else{
-            $prev_filename = $row['email'];
+            $prev_filename = $row['filename'];
             $result = unlink($destination_path . "/" . $prev_filename);
 
             if (! $result) {
