@@ -36,10 +36,18 @@ if (isset($_POST["submit"])){
                 $profile_error = "Profile picture not uploaded successfully!";
             }
             else {
-                $sql = "INSERT INTO customer (`firstname`, `lastname`, `email`, `city`, `country`, `filename`) VALUES ('$firstname', '$lastname', '$email', '$city', '$country', '$filename')";
-                $con->query($sql) or die ($con->error);
+                $dimensions = getimagesize($target_path);
 
-                echo header("Location: index.php");
+                if ($dimensions) {
+                    $sql = "INSERT INTO customer (`firstname`, `lastname`, `email`, `city`, `country`, `filename`) VALUES ('$firstname', '$lastname', '$email', '$city', '$country', '$filename')";
+                    $con->query($sql) or die ($con->error);
+
+                    echo header("Location: index.php");
+                }
+                else {
+                    unlink($target_path);
+                    $profile_error = "Profile picture is broken!";
+                }
             }
         }
         else{
@@ -56,10 +64,18 @@ if (isset($_POST["submit"])){
                     $profile_error = "Profile picture not uploaded successfully!";
                 }
                 else {
-                    $sql = "UPDATE customer SET firstname='$firstname', lastname='$lastname', city='$city', country='$country', filename='$filename' WHERE email='$email'";
-                    $con->query($sql) or die ($con->error);
+                    $dimensions = getimagesize($target_path);
 
-                    echo header("Location: index.php");
+                    if ($dimensions) {
+                        $sql = "UPDATE customer SET firstname='$firstname', lastname='$lastname', city='$city', country='$country', filename='$filename' WHERE email='$email'";
+                        $con->query($sql) or die ($con->error);
+
+                        echo header("Location: index.php");
+                    }
+                    else {
+                        unlink($target_path);
+                        $profile_error = "Profile picture is broken!";
+                    }
                 }
             }
         }
